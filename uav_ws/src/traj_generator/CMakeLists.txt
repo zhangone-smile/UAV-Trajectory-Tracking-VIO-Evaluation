@@ -56,3 +56,6 @@ target_link_libraries(freq_scan ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${EIGEN3_
 
 add_executable(traj_square src/traj_suqare.cpp)
 target_link_libraries(traj_square trajectory_generator_waypoint ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${EIGEN3_INCLUDE_DIR})
+
+add_executable(cos_wave src/cos_wave.cpp)
+target_link_libraries(cos_wave trajectory_generator_waypoint ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${EIGEN3_INCLUDE_DIR})
