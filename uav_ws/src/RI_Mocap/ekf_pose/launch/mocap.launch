@@ -2,7 +2,7 @@
     
     <node pkg="ekf" type="ekf" name="ekf" output="screen">
         <remap from="~imu" to="/mavros/imu/data"/>
-        <remap from="~bodyodometry" to="/vrpn_client_node/G1/pose"/> 
+        <remap from="~bodyodometry" to="/vrpn_client_node/G3/pose"/> 
         <remap from="~ekf_odom" to="/ekf/ekf_odom"/>
 
         <!-- parms -->
