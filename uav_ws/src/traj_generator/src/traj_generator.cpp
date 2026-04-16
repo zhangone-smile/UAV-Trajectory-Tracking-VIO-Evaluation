@@ -3,13 +3,13 @@
 #include <cmath>
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
-#include <nav_msgs/Path.h>
-#include <visualization_msgs/Marker.h>
+#include <geometry_msgs/PointStamped.h>
 #include <sys/time.h>
 #include <string>
 #include <time.h>
 #include <eigen3/Eigen/Dense>
 #include <quadrotor_msgs/PositionCommand.h>
+#include <visualization_msgs/Marker.h>
 #include <trajectory_generator_waypoint.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseArray.h>
@@ -19,7 +19,6 @@ using namespace Eigen;
 using namespace std;
 
 ros::Publisher traj_pub;
-ros::Publisher traj_path_pub;
 
 ros::Publisher position_cmd_pub;
 
@@ -30,7 +29,6 @@ ros::Subscriber uav_waypoints_sub;
 ros::Subscriber trigger_sub;
 
 visualization_msgs::Marker selected_marker;
-nav_msgs::Path traj_path;
 
 
 int traj_id_send= 0;
@@ -57,10 +55,6 @@ void traj_viz(){
     selected_marker.type = visualization_msgs::Marker::LINE_LIST;
     selected_marker.scale.x = 0.1;
     selected_marker.color.b = selected_marker.color.a = 1.0;
-
-    traj_path.header.stamp = selected_marker.header.stamp;
-    traj_path.header.frame_id = "world";
-    traj_path.poses.clear();
 
     bool first=true;
 
@@ -95,18 +89,9 @@ void traj_viz(){
                 parent.x = des_x;
                 parent.y = des_y;
                 parent.z = des_z;
-
+                
                 selected_marker.points.push_back(child);
                 selected_marker.points.push_back(parent);
-
-                geometry_msgs::PoseStamped pose;
-                pose.header = traj_path.header;
-                pose.pose.position.x = des_x;
-                pose.pose.position.y = des_y;
-                pose.pose.position.z = des_z;
-                pose.pose.orientation.w = 1.0;
-                traj_path.poses.push_back(pose);
-
                 break;
             }
         }
@@ -114,9 +99,9 @@ void traj_viz(){
 
 	if (!selected_marker.points.empty()) selected_marker.points.pop_back();
 
+
 	traj_pub.publish(selected_marker);
     selected_marker.points.clear();
-	traj_path_pub.publish(traj_path);
 }
 
 void uav_waypoints_call_back(const geometry_msgs::PoseArray& msg){
@@ -322,7 +307,6 @@ int main(int argc, char *argv[]){
 	trigger_sub = nh.subscribe( "/traj_start_trigger", 100, trigger_callback);
 	position_cmd_pub = nh.advertise<quadrotor_msgs::PositionCommand>("/position_cmd",1);
 	traj_pub = nh.advertise<visualization_msgs::Marker>("traj_viz", 1);
-	traj_path_pub = nh.advertise<nav_msgs::Path>("traj_path", 1);
 	
 	ros::spin();
 	return 0;
