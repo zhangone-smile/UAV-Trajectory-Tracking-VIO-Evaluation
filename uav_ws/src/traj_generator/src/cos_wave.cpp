@@ -489,8 +489,8 @@ void trigger_callback( const geometry_msgs::PoseStamped::ConstPtr& trigger_msg )
         pa.header.stamp = hover_start_time;
 
         double amplitude = 0.5;   // z oscillation amplitude (m)
-        double wavelength = 1.0;  // x distance per period (m)
-        int num_periods = 3;
+        double wavelength = 3.0;  // x distance per period (m)
+        int num_periods = 2;
         int pts_per_period = 8;
         int num_waypoints = num_periods * pts_per_period;
 
@@ -503,7 +503,7 @@ void trigger_callback( const geometry_msgs::PoseStamped::ConstPtr& trigger_msg )
             geometry_msgs::Pose pose_temp;
             pose_temp.position.x = start_x + t * wavelength;
             pose_temp.position.y = start_y;
-            pose_temp.position.z = start_z + amplitude * (cos(2.0 * M_PI * t) - 1.0);
+            pose_temp.position.z = start_z + amplitude * (-cos(2.0 * M_PI * t) + 1.0);
             pa.poses.push_back(pose_temp);
         }
 

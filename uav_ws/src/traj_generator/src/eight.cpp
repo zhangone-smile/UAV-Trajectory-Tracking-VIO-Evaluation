@@ -516,52 +516,48 @@ void trigger_callback( const geometry_msgs::PoseStamped::ConstPtr& trigger_msg )
         geometry_msgs::Pose pose_temp;
 
 
+        // Upper loop: rises to +1m at the far point
         pose_temp.position.x = uav_state(0) + 1.0;
         pose_temp.position.y = uav_state(1) + 1.0;
-        pose_temp.position.z = uav_state(2) - 0.3;
-
+        pose_temp.position.z = uav_state(2) + 0.5;
         pa.poses.push_back(pose_temp);
 
         pose_temp.position.x = uav_state(0) + 0.0;
         pose_temp.position.y = uav_state(1) + 2.0;
-        pose_temp.position.z = uav_state(2) + 0.0;
-        // pose_temp.yaw = uav_state(9) + M_PI/2;
+        pose_temp.position.z = uav_state(2) + 1.0;
         pa.poses.push_back(pose_temp);
 
         pose_temp.position.x = uav_state(0) - 1.0;
         pose_temp.position.y = uav_state(1) + 1.0;
-        pose_temp.position.z = uav_state(2) + 0.0;
-
+        pose_temp.position.z = uav_state(2) + 0.5;
         pa.poses.push_back(pose_temp);
 
+        // Center crossing (lowest)
         pose_temp.position.x = uav_state(0) + 0.0;
         pose_temp.position.y = uav_state(1) + 0.0;
         pose_temp.position.z = uav_state(2) + 0.0;
-        // pose_temp.yaw = uav_state(9) + M_PI/2;
         pa.poses.push_back(pose_temp);
 
+        // Lower loop: also rises to +1m at the far point
         pose_temp.position.x = uav_state(0) + 1.0;
         pose_temp.position.y = uav_state(1) - 1.0;
-        pose_temp.position.z = uav_state(2) + 0.0;
-        // pose_temp.yaw = uav_state(9) + M_PI/2;
+        pose_temp.position.z = uav_state(2) + 0.5;
         pa.poses.push_back(pose_temp);
 
         pose_temp.position.x = uav_state(0) + 0.0;
         pose_temp.position.y = uav_state(1) - 2.0;
-        pose_temp.position.z = uav_state(2) + 0.0;
-        // pose_temp.yaw = uav_state(9) + M_PI/2;
+        pose_temp.position.z = uav_state(2) + 1.0;
         pa.poses.push_back(pose_temp);
 
         pose_temp.position.x = uav_state(0) - 1.0;
         pose_temp.position.y = uav_state(1) - 1.0;
-        pose_temp.position.z = uav_state(2) + 0.0;
-        // pose_temp.yaw = uav_state(9) + M_PI/2;
+        pose_temp.position.z = uav_state(2) + 0.5;
         pa.poses.push_back(pose_temp);
 
+        // Return to center (lowest)
         pose_temp.position.x = uav_state(0) + 0.0;
         pose_temp.position.y = uav_state(1) + 0.0;
         pose_temp.position.z = uav_state(2) + 0.0;
-        // pose_temp.yaw = uav_state(9) + M_PI/2;
         pa.poses.push_back(pose_temp);
 
         end_pos.x() = pose_temp.position.x;

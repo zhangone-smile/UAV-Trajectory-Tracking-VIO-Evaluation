@@ -519,9 +519,9 @@ void trigger_callback( const geometry_msgs::PoseStamped::ConstPtr& trigger_msg )
         double center_z = uav_state(2) + radius; // 向上偏置半径，使圆心在当前位置上方
 
         // 在 X-Z 平面内进行圆周运动
-        int num_waypoints = 12;
+        int num_waypoints = 24;
         for(int i = 1; i <= num_waypoints; ++i){
-            double angle = -M_PI/2.0 + (2.0 * M_PI * i / num_waypoints); // 从最下方点开始
+            double angle = -M_PI/2.0 + (4.0 * M_PI * i / num_waypoints); // 从最下方点开始
             geometry_msgs::Pose pose_temp;
             pose_temp.position.x = center_x + radius * cos(angle);
             pose_temp.position.y = center_y;
