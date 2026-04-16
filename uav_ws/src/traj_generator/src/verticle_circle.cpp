@@ -572,7 +572,7 @@ void cmd_pub_loop(){
 }
 
 int main(int argc, char *argv[]){
-	ros::init(argc, argv, "traj_test");
+	ros::init(argc, argv, "verticle_circle");
 	ros::NodeHandle nh("~");
 
     nh.param("follow_yaw", follow_yaw, false);

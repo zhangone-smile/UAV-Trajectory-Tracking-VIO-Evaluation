@@ -38,6 +38,7 @@ using namespace Eigen;
 //imu: acc: x y z gyro: wx wy wz
 
 ros::Publisher odom_pub;
+ros::Publisher pose_pub;
 ros::Publisher cam_odom_pub;
 
 //state
@@ -380,6 +381,7 @@ int main(int argc, char **argv)
     ros::Subscriber s1 = n.subscribe("imu", 100, imu_callback, ros::TransportHints().tcpNoDelay());
     ros::Subscriber s2 = n.subscribe("pose", 100, mocap_callback, ros::TransportHints().tcpNoDelay());
     odom_pub = n.advertise<nav_msgs::Odometry>("ekf_odom", 100);   //freq = imu freq
+    pose_pub = n.advertise<geometry_msgs::PoseStamped>("ekf_pose", 100);
     cam_odom_pub = n.advertise<nav_msgs::Odometry>("cam_ekf_odom", 100);  
     
     n.getParam("gyro_cov", gyro_cov);
@@ -408,7 +410,6 @@ void system_pub(ros::Time stamp)
     nav_msgs::Odometry odom_fusion;
     odom_fusion.header.stamp = stamp;
     odom_fusion.header.frame_id = "world";
-    // odom_fusion.header.frame_id = "imu";
     odom_fusion.pose.pose.position.x = X_state(0);
     odom_fusion.pose.pose.position.y = X_state(1);
     odom_fusion.pose.pose.position.z = X_state(2);
@@ -422,6 +423,11 @@ void system_pub(ros::Time stamp)
     odom_fusion.twist.twist.linear.y = X_state(7);
     odom_fusion.twist.twist.linear.z = X_state(8);
     odom_pub.publish(odom_fusion);
+
+    geometry_msgs::PoseStamped pose_fusion;
+    pose_fusion.header = odom_fusion.header;
+    pose_fusion.pose = odom_fusion.pose.pose;
+    pose_pub.publish(pose_fusion);
 }
 void cam_system_pub(ros::Time stamp)
 {
