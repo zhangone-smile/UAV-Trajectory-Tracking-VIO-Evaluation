@@ -513,32 +513,63 @@ void trigger_callback( const geometry_msgs::PoseStamped::ConstPtr& trigger_msg )
         geometry_msgs::PoseArray pa;
         pa.header.stamp = hover_start_time;
 
-        double radius = 0.7; // 减小半径以适应 2m 的净空
-        double center_x = uav_state(0);
-        double center_y = uav_state(1);
-        double center_z = uav_state(2) + radius; // 向上偏置半径，使圆心在当前位置上方
+        geometry_msgs::Pose pose_temp;
 
-        // 在 X-Z 平面内进行圆周运动
-        int num_waypoints = 12;
-        for(int i = 1; i <= num_waypoints; ++i){
-            double angle = -M_PI/2.0 + (2.0 * M_PI * i / num_waypoints); // 从最下方点开始
-            geometry_msgs::Pose pose_temp;
-            pose_temp.position.x = center_x + radius * cos(angle);
-            pose_temp.position.y = center_y;
-            pose_temp.position.z = center_z + radius * sin(angle);
-            pa.poses.push_back(pose_temp);
-        }
 
-        end_pos.x() = pa.poses.back().position.x;
-        end_pos.y() = pa.poses.back().position.y;
-        end_pos.z() = pa.poses.back().position.z;
+        // Upper loop: rises to +1m at the far point
+        pose_temp.position.x = uav_state(0) + 1.0;
+        pose_temp.position.y = uav_state(1) + 1.0;
+        pose_temp.position.z = uav_state(2) + 0.5;
+        pa.poses.push_back(pose_temp);
+
+        pose_temp.position.x = uav_state(0) + 0.0;
+        pose_temp.position.y = uav_state(1) + 2.0;
+        pose_temp.position.z = uav_state(2) + 1.0;
+        pa.poses.push_back(pose_temp);
+
+        pose_temp.position.x = uav_state(0) - 1.0;
+        pose_temp.position.y = uav_state(1) + 1.0;
+        pose_temp.position.z = uav_state(2) + 0.5;
+        pa.poses.push_back(pose_temp);
+
+        // Center crossing (lowest)
+        pose_temp.position.x = uav_state(0) + 0.0;
+        pose_temp.position.y = uav_state(1) + 0.0;
+        pose_temp.position.z = uav_state(2) + 0.0;
+        pa.poses.push_back(pose_temp);
+
+        // Lower loop: also rises to +1m at the far point
+        pose_temp.position.x = uav_state(0) + 1.0;
+        pose_temp.position.y = uav_state(1) - 1.0;
+        pose_temp.position.z = uav_state(2) + 0.5;
+        pa.poses.push_back(pose_temp);
+
+        pose_temp.position.x = uav_state(0) + 0.0;
+        pose_temp.position.y = uav_state(1) - 2.0;
+        pose_temp.position.z = uav_state(2) + 1.0;
+        pa.poses.push_back(pose_temp);
+
+        pose_temp.position.x = uav_state(0) - 1.0;
+        pose_temp.position.y = uav_state(1) - 1.0;
+        pose_temp.position.z = uav_state(2) + 0.5;
+        pa.poses.push_back(pose_temp);
+
+        // Return to center (lowest)
+        pose_temp.position.x = uav_state(0) + 0.0;
+        pose_temp.position.y = uav_state(1) + 0.0;
+        pose_temp.position.z = uav_state(2) + 0.0;
+        pa.poses.push_back(pose_temp);
+
+        end_pos.x() = pose_temp.position.x;
+        end_pos.y() = pose_temp.position.y;
+        end_pos.z() = pose_temp.position.z;
         is_traj    = true;
         
         generate_traj(pa);
         
     
         cout<<"-----------------"<<endl;
-		ROS_WARN("Vertical Circle Traj start!");
+		ROS_WARN("traj start!");
         cout<<"start position:\n"<< uav_state.head(3).transpose()<<"\n mean speed: "<<mean_speed<<"\n total time: "<<uav_t.tail(1)(0) - uav_t.head(1)(0)<<endl;
 		cout<<"follow yaw: "<<follow_yaw<<endl;
     }
@@ -572,7 +603,7 @@ void cmd_pub_loop(){
 }
 
 int main(int argc, char *argv[]){
-	ros::init(argc, argv, "traj_test");
+	ros::init(argc, argv, "traj_eight");
 	ros::NodeHandle nh("~");
 
     nh.param("follow_yaw", follow_yaw, false);
