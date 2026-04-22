@@ -518,7 +518,7 @@ void trigger_callback( const geometry_msgs::PoseStamped::ConstPtr& trigger_msg )
 
         pose_temp.position.x = uav_state(0) + 1.0;
         pose_temp.position.y = uav_state(1) + 1.0;
-        pose_temp.position.z = uav_state(2) - 0.3;
+        pose_temp.position.z = uav_state(2) + 0.3;
 
         pa.poses.push_back(pose_temp);
 
