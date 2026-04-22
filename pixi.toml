@@ -12,6 +12,8 @@ topic = {cmd = "rostopic list", description = "List ros1 topics"}
 ros-noetic-rviz = "*"
 ros-noetic-ros-base = "*"
 rerun-sdk = ">=0.31.3,<0.32"
+
+[pypi-dependencies]
 evo = ">=1.36.3,<2"
 
 [activation.env]

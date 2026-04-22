@@ -1,45 +1,97 @@
-evo link: https://michaelgrupp.github.io/evo/
+# ELEC5660 — Lab Test Repo (Group 3)
 
+Jetson-side repo for drone flight testing and trajectory evaluation.
 
-**First, check your topics:**
+---
+
+## Setup
+
+### 1. Install Pixi
+
 ```bash
-evo_traj bag your_flight.bag --all_topics
+curl -fsSL https://pixi.sh/install.sh | sh
 ```
-You're looking for something like `/mavros/local_position/pose`, `/optitrack/pose`, or whatever your SLAM/OptiTrack topic is named.
 
-**Position error (APE) — this gives you RMSE, max error etc.:**
+Restart your shell so `pixi` is on your `PATH`.
+
+### 2. Install the environment
+
 ```bash
-evo_ape bag your_flight.bag /reference_traj /actual_pose -va --plot --save_results results/ape.zip
+pixi install
 ```
 
-**Then dump the stats to a table:**
+### 3. Configure ROS networking
+
+Edit `pixi.toml` under `[activation.env]`:
+
+| Variable | Value |
+|---|---|
+| `ROS_MASTER_URI` | `http://<JETSON_IP>:11311` |
+| `ROS_IP` | `<YOUR_LAPTOP_IP>` |
+
+Current values: Jetson `192.168.0.54`, Laptop `192.168.0.153`.
+
+---
+
+## Visualisation
+
+```bash
+pixi run rviz          # launch RViz with rviz.rviz config
+pixi run topic         # list ROS topics (sanity check connectivity)
+```
+
+RViz config: `visualization/rviz.rviz`
+
+---
+
+## Trajectory Evaluation (evo)
+
+Reference: https://michaelgrupp.github.io/evo/
+
+### Bag files
+
+| File | Description |
+|---|---|
+| `bag/circle.bag` | Circle trajectory |
+| `bag/cos.bag` | Cosine trajectory |
+| `bag/donut.bag` | Donut trajectory |
+| `bag/eight.bag` | Figure-eight trajectory |
+
+### Useful topics (from `circle.bag`)
+
+| Topic | Poses | Path length |
+|---|---|---|
+| `/vrpn_client_node/G3/pose` | 1603 | 4.611 m |
+| `/ekf/cam_ekf_odom` | 1603 | 4.619 m |
+| `/ekf/ekf_odom` | 1259 | 4.826 m |
+| `/mavros/local_position/odom` | 258 | 5.473 m |
+
+### Commands
+
+**Inspect topics in a bag:**
+```bash
+evo_traj bag bag/circle.bag --all_topics
+```
+
+**Absolute Pose Error (APE) — position RMSE, max error:**
+```bash
+evo_ape bag bag/circle.bag /vrpn_client_node/G3/pose /ekf/cam_ekf_odom \
+    -va --plot --save_results results/ape.zip
+```
+
+**3D trajectory comparison:**
+```bash
+evo_traj bag bag/circle.bag /ekf/cam_ekf_odom \
+    --ref /vrpn_client_node/G3/pose -p --plot_mode xyz
+```
+
+**Summarise results to table:**
 ```bash
 evo_res results/*.zip -p --save_table results/table.csv
 ```
-This directly fills in your Position RMSE and Max Position Error table cells.
 
----
-
-**For velocity** — evo doesn't do velocity natively, so you have two options:
-
-**Easy:** use RPE with `--delta 1` as a proxy for velocity-level error:
+**Relative Pose Error (RPE) — velocity-level proxy:**
 ```bash
-evo_rpe bag your_flight.bag /reference_traj /actual_pose -va --delta 1 --plot
+evo_rpe bag bag/circle.bag /vrpn_client_node/G3/pose /ekf/cam_ekf_odom \
+    -va --delta 1 --plot
 ```
-
-**Better:** extract and plot velocity directly in Python:
-```python
-from rosbags.rosbag1 import Reader
-# read /odom or /mavros/local_position/velocity and plot with matplotlib
-```
-
----
-
-**For the 3D trajectory comparison figure:**
-```bash
-evo_traj bag your_flight.bag /actual_pose --ref /reference_traj -p --plot_mode xyz
-```
-
----
-
-What are your actual topic names in the bag? I can give you the exact commands ready to copy-paste.
