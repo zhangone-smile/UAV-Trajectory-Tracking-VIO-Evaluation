@@ -1,0 +1,19 @@
+[workspace]
+channels = ["conda-forge","robostack-noetic"]
+name = "rviz"
+platforms = ["linux-64","osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+rviz = {cmd = "rviz -d rviz.rviz", description = "Visualise with rviz"}
+topic = {cmd = "rostopic list", description = "List ros1 topics"}
+
+[dependencies]
+ros-noetic-rviz = "*"
+ros-noetic-ros-base = "*"
+rerun-sdk = ">=0.31.3,<0.32"
+evo = ">=1.36.3,<2"
+
+[activation.env]
+ROS_MASTER_URI = "http://192.168.0.54:11311" # Jetson IP
+ROS_IP= "192.168.0.153" # Laptop IP
