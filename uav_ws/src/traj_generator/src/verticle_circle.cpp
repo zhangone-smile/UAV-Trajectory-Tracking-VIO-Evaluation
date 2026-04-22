@@ -10,6 +10,7 @@
 #include <eigen3/Eigen/Dense>
 #include <quadrotor_msgs/PositionCommand.h>
 #include <visualization_msgs/Marker.h>
+#include <nav_msgs/Path.h>
 #include <trajectory_generator_waypoint.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseArray.h>
@@ -22,6 +23,7 @@ using namespace Eigen;
 using namespace std;
 
 ros::Publisher traj_pub;
+ros::Publisher traj_path_pub;
 
 ros::Publisher position_cmd_pub;
 
@@ -75,6 +77,10 @@ void traj_viz(){
     selected_marker.scale.x = 0.1;
     selected_marker.color.b = selected_marker.color.a = 1.0;
 
+    nav_msgs::Path traj_path;
+    traj_path.header.stamp = selected_marker.header.stamp;
+    traj_path.header.frame_id = "world";
+
     bool first=true;
 
     for(double dT = traj_start_time;dT< uav_t(uav_t.rows()-1);dT+=0.05) {
@@ -83,6 +89,15 @@ void traj_viz(){
             parent.y=uav_coef(0,6);
          	parent.z=uav_coef(0,12);
             selected_marker.points.push_back(parent);
+
+            geometry_msgs::PoseStamped ps;
+            ps.header = traj_path.header;
+            ps.pose.position.x = parent.x;
+            ps.pose.position.y = parent.y;
+            ps.pose.position.z = parent.z;
+            ps.pose.orientation.w = 1.0;
+            traj_path.poses.push_back(ps);
+
             first=false;
         }
         for (int i = 1; i < uav_t.size(); i++) {
@@ -111,6 +126,15 @@ void traj_viz(){
                 
                 selected_marker.points.push_back(child);
                 selected_marker.points.push_back(parent);
+
+                geometry_msgs::PoseStamped ps;
+                ps.header = traj_path.header;
+                ps.pose.position.x = des_x;
+                ps.pose.position.y = des_y;
+                ps.pose.position.z = des_z;
+                ps.pose.orientation.w = 1.0;
+                traj_path.poses.push_back(ps);
+
                 break;
             }
         }
@@ -121,6 +145,8 @@ void traj_viz(){
 
 	traj_pub.publish(selected_marker);
     selected_marker.points.clear();
+
+    traj_path_pub.publish(traj_path);
 }
 
 void generate_traj(geometry_msgs::PoseArray& msg){
@@ -584,6 +610,7 @@ int main(int argc, char *argv[]){
 	position_cmd_pub = nh.advertise<quadrotor_msgs::PositionCommand>("/position_cmd",1);
     current_pose_pub = nh.advertise<quadrotor_msgs::PositionCommand>("/current_pose",1);
 	traj_pub = nh.advertise<visualization_msgs::Marker>("traj_viz", 1);
+	traj_path_pub = nh.advertise<nav_msgs::Path>("traj_path", 1);
 	
     // std::thread cmd_pub_thread(cmd_pub_loop);
 
