@@ -48,8 +48,8 @@ target_link_libraries(traj_test trajectory_generator_waypoint ${catkin_LIBRARIES
 add_executable(traj_eight src/traj_eight.cpp)
 target_link_libraries(traj_eight trajectory_generator_waypoint ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${EIGEN3_INCLUDE_DIR})
 
-add_executable(traj_verticle_circle src/traj_verticle_circle.cpp)
-target_link_libraries(traj_verticle_circle trajectory_generator_waypoint ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${EIGEN3_INCLUDE_DIR})
+add_executable(verticle_circle src/verticle_circle.cpp)
+target_link_libraries(verticle_circle trajectory_generator_waypoint ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${EIGEN3_INCLUDE_DIR})
 
 add_executable(freq_scan src/freq_scan.cpp)
 target_link_libraries(freq_scan ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${EIGEN3_INCLUDE_DIR})
@@ -59,3 +59,9 @@ target_link_libraries(traj_square trajectory_generator_waypoint ${catkin_LIBRARI
 
 add_executable(cos_wave src/cos_wave.cpp)
 target_link_libraries(cos_wave trajectory_generator_waypoint ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${EIGEN3_INCLUDE_DIR})
+
+add_executable(donut src/donut.cpp)
+target_link_libraries(donut trajectory_generator_waypoint ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${EIGEN3_INCLUDE_DIR})
+
+add_executable(eight src/eight.cpp)
+target_link_libraries(eight trajectory_generator_waypoint ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${EIGEN3_INCLUDE_DIR})
