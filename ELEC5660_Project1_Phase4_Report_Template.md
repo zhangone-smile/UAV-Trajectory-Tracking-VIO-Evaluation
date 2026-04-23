@@ -1,4 +1,5 @@
 # ELEC 5660 Project 1 Phase 4 Report Template
+![cosine wave demo](fig/cos_wave.gif)
 
 *Autonomous Flight with OptiTrack: Flight Data Analysis Report*
 
