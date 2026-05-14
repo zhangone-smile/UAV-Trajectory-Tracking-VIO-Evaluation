@@ -17,10 +17,10 @@ using namespace std;
 
 namespace ekf_imu_vision {
 
-  enum {imu, vo, keyframe};
+  enum {imu, vo, keyframe, height_range, state_type_count};
 
 struct AugState {
-  int type;                       // the type of the state: imu, vo, keyframe
+  int type;                       // the type of the state: imu, vo, keyframe, height_range
   ros::Time time_stamp;           // time stamp
   ros::Time key_frame_time_stamp; // the keyframe time stamp of the state
 
@@ -42,21 +42,28 @@ private:
   /* ============================== EKF base ============================== */
 
   deque<AugState> aug_state_hist_;  // the queue storing the necessary state history in chronological order
-  unsigned int latest_idx[3];       // the index of the latest state of each type in the queue
+  unsigned int latest_idx[state_type_count]; // the index of the latest state of each type in the queue
   Vec6 current_imu_ut;
 
   /* ---------- parameter ---------- */
   Mat12x12        Qt_;         // imu
   Mat6x6          Rt2_;        // stereo vo
+  Mat1x1          Rt_range_;   // range finder height
 
   Mat(21, 15) M_a_;
   Mat(15, 21) M_r_;
+
+  bool            enable_range_;
+  double          range_min_;
+  double          range_max_;
+  double          range_gate_;
 
   bool initFilter();
   bool initFromState(deque<AugState>::iterator start_it);
 
   void predictIMU(AugState& cur_state, AugState& prev_state, Vec6 ut);
   void updateVO(AugState& cur_state, AugState& prev_state);
+  void updateRange(AugState& cur_state);
   void changeAugmentedState(AugState& state);
 
   bool processNewState(AugState& new_state, bool change_keyframe);
@@ -71,12 +78,13 @@ private:
 
   /* ============================== ros interface ============================== */
   ros::NodeHandle node_;
-  ros::Subscriber imu_sub_, stereo_sub_;
+  ros::Subscriber imu_sub_, stereo_sub_, range_sub_;
   ros::Publisher  fuse_odom_pub_, path_pub_;
   nav_msgs::Path  path_;
 
   void imuCallback(const sensor_msgs::ImuConstPtr& imu_msg);
   void stereoVOCallback(const stereo_vo::relative_poseConstPtr& msg);
+  void rangeCallback(const sensor_msgs::RangeConstPtr& msg);
   void publishFusedOdom();
 
 public:

@@ -31,7 +31,9 @@ Vec3 quatToEuler(const geometry_msgs::Quaternion& q_msg) {
 int typePriority(int type) {
   if (type == imu) return 0;
   if (type == keyframe) return 1;
-  return 2;
+  if (type == vo) return 2;
+  if (type == height_range) return 3;
+  return 4;
 }
 
 bool sameStamp(const ros::Time& a, const ros::Time& b) {
@@ -42,6 +44,7 @@ const char* stateTypeName(int type) {
   if (type == imu) return "imu";
   if (type == vo) return "vo";
   if (type == keyframe) return "keyframe";
+  if (type == height_range) return "range";
   return "unknown";
 }
 
@@ -57,6 +60,7 @@ void EKFImuVision::init(ros::NodeHandle& nh) {
   /* ---------- parameter ---------- */
   Qt_.setZero();
   Rt2_.setZero();
+  Rt_range_.setZero();
 
   M_a_.setZero();
   M_r_.setZero();
@@ -73,17 +77,31 @@ void EKFImuVision::init(ros::NodeHandle& nh) {
     node_.param("aug_ekf/vo_pos", Rt2_(i, i), -1.0);
     node_.param("aug_ekf/vo_rot", Rt2_(i + 3, i + 3), -1.0);
   }
+  node_.param("aug_ekf/enable_range", enable_range_, true);
+  node_.param("aug_ekf/range_var", Rt_range_(0, 0), 0.01);
+  node_.param("aug_ekf/range_min", range_min_, 0.0);
+  node_.param("aug_ekf/range_max", range_max_, 0.0);
+  node_.param("aug_ekf/range_gate", range_gate_, 0.8);
+  if (Rt_range_(0, 0) <= 0.0) {
+    ROS_WARN_STREAM("Augmented EKF: invalid range_var=" << Rt_range_(0, 0)
+                    << ", using 0.01.");
+    Rt_range_(0, 0) = 0.01;
+  }
 
   init_ = false;
   current_imu_ut.setZero();
   path_.poses.clear();
 
-  for (int i = 0; i < 3; i++) latest_idx[i] = 0;
+  for (int i = 0; i < state_type_count; i++) latest_idx[i] = 0;
 
   /* ---------- subscribe and publish ---------- */
   imu_sub_ = node_.subscribe<sensor_msgs::Imu>("imu", 100, &EKFImuVision::imuCallback, this);
   stereo_sub_ = node_.subscribe<stereo_vo::relative_pose>("/vo/Relative_pose", 10,
                                                           &EKFImuVision::stereoVOCallback, this);
+  if (enable_range_) {
+    range_sub_ = node_.subscribe<sensor_msgs::Range>("range", 20, &EKFImuVision::rangeCallback, this,
+                                                     ros::TransportHints().tcpNoDelay());
+  }
   fuse_odom_pub_ = node_.advertise<nav_msgs::Odometry>("/ekf/ekf_odom", 10);
   path_pub_ = node_.advertise<nav_msgs::Path>("/ekf/Path", 100);
 
@@ -134,6 +152,53 @@ void EKFImuVision::stereoVOCallback(const stereo_vo::relative_poseConstPtr& msg)
                            << " key=" << new_state.key_frame_time_stamp.toSec()
                            << " rel_pos=" << new_state.ut.segment<3>(0).transpose()
                            << " rel_euler=" << new_state.ut.segment<3>(3).transpose());
+
+  if (!processNewState(new_state, false)) {
+    return;
+  }
+}
+
+void EKFImuVision::rangeCallback(const sensor_msgs::RangeConstPtr& msg) {
+  if (!enable_range_) {
+    return;
+  }
+
+  const double range = msg->range;
+  if (!std::isfinite(range) || range < 0.0) {
+    ROS_WARN_STREAM_THROTTLE(1.0, "[aug_ekf][range_cb] drop invalid range=" << range);
+    return;
+  }
+
+  double min_range = range_min_;
+  if (msg->min_range > 0.0) min_range = std::max(min_range, static_cast<double>(msg->min_range));
+  if (range < min_range) {
+    ROS_WARN_STREAM_THROTTLE(1.0, "[aug_ekf][range_cb] drop below min range=" << range
+                             << " min=" << min_range);
+    return;
+  }
+
+  double max_range = range_max_;
+  if (msg->max_range > 0.0) {
+    max_range = max_range > 0.0 ? std::min(max_range, static_cast<double>(msg->max_range))
+                                : static_cast<double>(msg->max_range);
+  }
+  if (max_range > 0.0 && range > max_range) {
+    ROS_WARN_STREAM_THROTTLE(1.0, "[aug_ekf][range_cb] drop above max range=" << range
+                             << " max=" << max_range);
+    return;
+  }
+
+  AugState new_state;
+  new_state.time_stamp = msg->header.stamp.isZero() ? ros::Time::now() : msg->header.stamp;
+  new_state.key_frame_time_stamp = ros::Time(0);
+  new_state.type = height_range;
+  new_state.mean.setZero();
+  new_state.covariance.setZero();
+  new_state.ut.setZero();
+  new_state.ut(0) = range;
+
+  ROS_INFO_STREAM_THROTTLE(1.0, "[aug_ekf][range_cb] t=" << new_state.time_stamp.toSec()
+                           << " range=" << range);
 
   if (!processNewState(new_state, false)) {
     return;
@@ -225,6 +290,44 @@ void EKFImuVision::updateVO(AugState& cur_state, AugState& prev_state) {
                            << " key_pos=" << cur_state.mean.segment<3>(15).transpose());
 }
 
+void EKFImuVision::updateRange(AugState& cur_state) {
+  const double measured_z = cur_state.ut(0);
+  const double predicted_z = cur_state.mean(2);
+  const double residual = measured_z - predicted_z;
+
+  if (range_gate_ > 0.0 && std::fabs(residual) > range_gate_) {
+    ROS_WARN_STREAM_THROTTLE(1.0, "[aug_ekf][range_update] reject residual=" << residual
+                             << " measured_z=" << measured_z
+                             << " state_z=" << predicted_z
+                             << " gate=" << range_gate_);
+    return;
+  }
+
+  Eigen::Matrix<double, 1, 21> H = Eigen::Matrix<double, 1, 21>::Zero();
+  H(0, 2) = 1.0;
+
+  Mat1x1 S = H * cur_state.covariance * H.transpose() + Rt_range_;
+  if (S(0, 0) <= 1e-12 || !std::isfinite(S(0, 0))) {
+    ROS_WARN_STREAM_THROTTLE(1.0, "[aug_ekf][range_update] skip invalid innovation variance="
+                             << S(0, 0));
+    return;
+  }
+
+  Eigen::Matrix<double, 21, 1> K = cur_state.covariance * H.transpose() / S(0, 0);
+  Mat21x21 I = Mat21x21::Identity();
+
+  cur_state.mean += K * residual;
+  normalizeAngles(cur_state.mean);
+  cur_state.covariance = (I - K * H) * cur_state.covariance * (I - K * H).transpose() +
+                         K * Rt_range_ * K.transpose();
+  cur_state.covariance = 0.5 * (cur_state.covariance + cur_state.covariance.transpose());
+
+  ROS_INFO_STREAM_THROTTLE(1.0, "[aug_ekf][range_update] t=" << cur_state.time_stamp.toSec()
+                           << " measured_z=" << measured_z
+                           << " residual=" << residual
+                           << " state_z=" << cur_state.mean(2));
+}
+
 void EKFImuVision::changeAugmentedState(AugState& state) {
   Vec15 x15 = M_r_ * state.mean;
   Mat15x15 P15 = M_r_ * state.covariance * M_r_.transpose();
@@ -286,7 +389,7 @@ deque<AugState>::iterator EKFImuVision::insertNewState(AugState& new_state) {
   unsigned int idx = static_cast<unsigned int>(std::distance(aug_state_hist_.begin(), insert_it));
   aug_state_hist_.insert(insert_it, new_state);
 
-  for (int i = 0; i < 3; ++i) latest_idx[i] = 0;
+  for (int i = 0; i < state_type_count; ++i) latest_idx[i] = 0;
   for (unsigned int i = 0; i < aug_state_hist_.size(); ++i) {
     latest_idx[aug_state_hist_[i].type] = i;
   }
@@ -324,6 +427,9 @@ void EKFImuVision::repropagate(deque<AugState>::iterator& new_input_it, bool& in
     } else if (cur_state.type == vo) {
       predictIMU(cur_state, prev_state, last_imu_ut);
       updateVO(cur_state, prev_state);
+    } else if (cur_state.type == height_range) {
+      predictIMU(cur_state, prev_state, last_imu_ut);
+      updateRange(cur_state);
     }
   }
 
@@ -333,7 +439,7 @@ void EKFImuVision::repropagate(deque<AugState>::iterator& new_input_it, bool& in
                            << " queue_size=" << aug_state_hist_.size()
                            << " active_key=" << aug_state_hist_.back().key_frame_time_stamp.toSec());
 
-  for (int i = 0; i < 3; ++i) latest_idx[i] = 0;
+  for (int i = 0; i < state_type_count; ++i) latest_idx[i] = 0;
   for (unsigned int i = 0; i < aug_state_hist_.size(); ++i) {
     latest_idx[aug_state_hist_[i].type] = i;
   }
@@ -359,7 +465,7 @@ void EKFImuVision::removeOldState() {
                            << " back_t=" << aug_state_hist_.back().time_stamp.toSec()
                            << " active_key=" << aug_state_hist_.back().key_frame_time_stamp.toSec());
 
-  for (int i = 0; i < 3; ++i) latest_idx[i] = 0;
+  for (int i = 0; i < state_type_count; ++i) latest_idx[i] = 0;
   for (unsigned int i = 0; i < aug_state_hist_.size(); ++i) {
     latest_idx[aug_state_hist_[i].type] = i;
   }
@@ -473,7 +579,7 @@ bool EKFImuVision::initFromState(deque<AugState>::iterator start_it) {
                   << " type=" << stateTypeName(start_it->type)
                   << " init_cov_diag=" << start_it->covariance.diagonal().transpose());
 
-  for (int i = 0; i < 3; ++i) latest_idx[i] = 0;
+  for (int i = 0; i < state_type_count; ++i) latest_idx[i] = 0;
   for (unsigned int i = 0; i < aug_state_hist_.size(); ++i) {
     latest_idx[aug_state_hist_[i].type] = i;
   }
