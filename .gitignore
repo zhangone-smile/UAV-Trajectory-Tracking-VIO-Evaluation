@@ -1,0 +1,8 @@
+
+**.DS_Store
+# pixi environments
+project1/.pixi/*
+!project1/.pixi/config.toml
+# Build output
+project2/uav_ws_ekf/build/*
+project2/uav_ws_ekf/devel/*
