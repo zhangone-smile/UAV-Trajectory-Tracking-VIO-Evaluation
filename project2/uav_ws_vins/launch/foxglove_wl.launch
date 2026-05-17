@@ -1,0 +1,12 @@
+<launch>
+    <node pkg="foxglove_bridge" type="foxglove_bridge" name="foxglove_bridge" output="log">
+            <rosparam param="topic_whitelist">
+            ["/rosout",
+            "/rosout_agg",
+            "/tf"
+            ]
+            </rosparam>
+            <rosparam param="service_whitelist">[]</rosparam>
+            <rosparam param="param_whitelist">[]</rosparam>
+    </node>
+</launch>
