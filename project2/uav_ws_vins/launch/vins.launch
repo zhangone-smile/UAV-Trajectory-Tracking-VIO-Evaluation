@@ -1,0 +1,15 @@
+<launch>
+    <node pkg="vins" type="vins_node" name="vins_estimator" output="screen">
+        <param name="config_file" value="../config/vins_config.yaml"/>
+    </node>
+    <node pkg="foxglove_bridge" type="foxglove_bridge" name="foxglove_bridge" output="log">
+        <!-- <rosparam param="topic_whitelist">
+          ["/tf",
+           "/rosout",
+           "/rosout_agg",
+           ]
+        </rosparam>
+        <rosparam param="service_whitelist">[]</rosparam>
+        <rosparam param="param_whitelist">[]</rosparam> -->
+    </node>
+</launch>
