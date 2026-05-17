@@ -1,9 +1,11 @@
 #!/bin/bash
 # Compile all native packages, excluding VINS (which runs in Docker)
 
-cd ~/dev_dir/uav_ws_vins
-source devel/setup.bash
+mv src/VINS-Fusion-ELEC5660 /tmp/VINS-Fusion-ELEC5660.bak
 
-catkin_make --exclude vins
+export PATH=/usr/bin:$PATH
+catkin_make
+
+mv /tmp/VINS-Fusion-ELEC5660.bak src/VINS-Fusion-ELEC5660
 
 echo "Build complete! Run ./run.sh to launch everything (VINS in Docker, rest native)."

@@ -12,7 +12,7 @@ roslaunch traj_generator eight.launch & sleep 2;
 rosrun foxglove_bridge foxglove_bridge & sleep 2;
 
 # Run VINS-Fusion from the pre-built Docker image (no need to mount source)
-docker run \
+sudo docker run \
     -it \
     --rm \
     --net=host \
