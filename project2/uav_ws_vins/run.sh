@@ -18,8 +18,8 @@ sudo docker run \
     --net=host \
     ros:vins-fusion \
     /bin/bash -c \
-    "source /opt/ros/$ROS_DISTRO/setup.bash; \
+    'source /opt/ros/$ROS_DISTRO/setup.bash; \
     source devel/setup.bash; \
-    rosrun vins vins_node /root/catkin_ws/src/VINS-Fusion/config/vins_config.yaml" & sleep 2;
+    rosrun vins vins_node /root/catkin_ws/src/VINS-Fusion/config/vins_config.yaml';
 
 wait;

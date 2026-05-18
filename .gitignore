@@ -6,3 +6,5 @@ project1/.pixi/*
 # Build output
 project2/uav_ws_ekf/build/*
 project2/uav_ws_ekf/devel/*
+project2/uav_ws_vins/build/*
+project2/uav_ws_vins/devel/*

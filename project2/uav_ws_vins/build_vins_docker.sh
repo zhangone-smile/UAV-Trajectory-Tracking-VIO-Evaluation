@@ -6,4 +6,5 @@ DOCKER_DIR=${VINS_FUSION_DIR}/docker
 
 # Build the Docker image from local Dockerfile
 # This compiles VINS-Fusion inside the image (done once, not at runtime)
-docker build -t ros:vins-fusion ${DOCKER_DIR}
+cd ${DOCKER_DIR}
+sudo make build
