@@ -16,6 +16,7 @@ sudo docker run \
     -it \
     --rm \
     --net=host \
+    -v src/VINS-Fusion-ELEC5660/config:/root/catkin_ws/src/VINS-Fusion/config:ro \
     ros:vins-fusion \
     /bin/bash -c \
     'source /opt/ros/$ROS_DISTRO/setup.bash; \
