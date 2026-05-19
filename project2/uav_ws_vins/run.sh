@@ -10,17 +10,6 @@ rosrun mavros mavcmd long 511 105 5000 0 0 0 0 0 & sleep 3;
 roslaunch px4ctrl run_ctrl.launch & sleep 2;
 roslaunch traj_generator eight.launch & sleep 2;
 rosrun foxglove_bridge foxglove_bridge & sleep 2;
-
-# Run VINS-Fusion from the pre-built Docker image (no need to mount source)
-sudo docker run \
-    -it \
-    --rm \
-    --net=host \
-    -v src/VINS-Fusion-ELEC5660/config:/root/catkin_ws/src/VINS-Fusion/config:ro \
-    ros:vins-fusion \
-    /bin/bash -c \
-    'source /opt/ros/$ROS_DISTRO/setup.bash; \
-    source devel/setup.bash; \
-    rosrun vins vins_node /root/catkin_ws/src/VINS-Fusion/config/vins_config.yaml';
+rosrun vins vins_node config/vins_config.yaml
 
 wait;

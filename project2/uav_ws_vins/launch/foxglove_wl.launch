@@ -3,7 +3,8 @@
             <rosparam param="topic_whitelist">
             ["/rosout",
             "/rosout_agg",
-            "/tf"
+            "/tf",
+            
             ]
             </rosparam>
             <rosparam param="service_whitelist">[]</rosparam>
