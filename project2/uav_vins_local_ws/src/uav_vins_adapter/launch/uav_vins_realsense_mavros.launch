@@ -1,0 +1,103 @@
+<launch>
+  <arg name="run_realsense" default="false"/>
+  <arg name="run_mavros" default="false"/>
+  <arg name="run_vins" default="true"/>
+  <arg name="run_bridge" default="true"/>
+
+  <arg name="fcu_url" default="/dev/ttyTHS0:921600"/>
+
+  <!--
+    Calibration-free bring-up:
+    The VINS main config plus the two cam_pinhole.yaml files are staged into
+    runtime_dir at launch time. The cam yamls are written from the live
+    /camera/infra*/camera_info topics so no offline calibration file is needed.
+    If a camera_info topic is silent, the bundled package-config yamls are used
+    as a fallback so VINS still starts.
+  -->
+  <arg name="auto_calib" default="true"/>
+  <arg name="runtime_dir" default="/tmp/uav_vins_runtime"/>
+  <arg name="static_config_file"
+       default="$(find uav_vins_adapter)/config/vins_realsense_stereo_imu.yaml"/>
+  <arg name="config_file"
+       default="$(arg runtime_dir)/vins_realsense_stereo_imu.yaml"/>
+  <arg name="left_camera_info" default="/camera/infra1/camera_info"/>
+  <arg name="right_camera_info" default="/camera/infra2/camera_info"/>
+  <arg name="auto_calib_timeout" default="20.0"/>
+
+  <arg name="vins_pkg" default="vins"/>
+  <arg name="vins_type" default="vins_node"/>
+  <arg name="vins_name" default="vins_estimator"/>
+
+  <arg name="vins_input_odom" default="/vins_estimator/odometry"/>
+  <arg name="vins_compat_input_odom" default="/vins_estimator/imu_propagate"/>
+  <arg name="vins_output_odom" default="/vins/odom"/>
+  <arg name="vins_output_path" default="/vins/path"/>
+  <arg name="publish_px4ctrl_compat" default="true"/>
+  <arg name="compat_odom" default="/ekf/ekf_odom"/>
+
+  <include if="$(arg run_mavros)" file="$(find mavros)/launch/px4.launch">
+    <arg name="fcu_url" value="$(arg fcu_url)"/>
+  </include>
+
+  <include if="$(arg run_realsense)" file="$(find realsense2_camera)/launch/rs_camera.launch">
+    <arg name="enable_infra1" value="true"/>
+    <arg name="enable_infra2" value="true"/>
+    <arg name="enable_color" value="false"/>
+    <arg name="enable_depth" value="false"/>
+    <arg name="infra_width" value="640"/>
+    <arg name="infra_height" value="480"/>
+    <arg name="infra_fps" value="30"/>
+    <arg name="initial_reset" value="true"/>
+  </include>
+
+  <!--
+    Stage VINS config from live camera_info (and copy main yaml next to the cam
+    yamls so cam0_calib/cam1_calib resolve correctly). Not required: this node
+    exits 0 after writing files; required=true would tear the launch down on
+    that clean exit. The vins_node below waits for the staged file before
+    starting.
+  -->
+  <node if="$(arg auto_calib)"
+        pkg="uav_vins_adapter"
+        type="dump_camera_info_for_vins.py"
+        name="vins_config_setup"
+        output="screen"
+        args="--output-dir $(arg runtime_dir)
+              --main-config $(arg static_config_file)
+              --left $(arg left_camera_info)
+              --right $(arg right_camera_info)
+              --fallback-dir $(find uav_vins_adapter)/config
+              --timeout $(arg auto_calib_timeout)"/>
+
+  <!--
+    Wait for the staged config_file before starting vins_node, otherwise
+    parameters.cpp opens a missing yaml and crashes. _wait_for_file.sh polls
+    its first arg, then exec's the rest. Kept as a separate script so we do
+    not collide with roslaunch's $(...) substitution parser.
+  -->
+  <node if="$(arg run_vins)"
+        pkg="$(arg vins_pkg)"
+        type="$(arg vins_type)"
+        name="$(arg vins_name)"
+        output="screen"
+        args="$(arg config_file)"
+        launch-prefix="$(find uav_vins_adapter)/scripts/_wait_for_file.sh $(arg config_file)">
+    <param name="config_file" type="string" value="$(arg config_file)"/>
+  </node>
+
+  <node if="$(arg run_bridge)"
+        pkg="uav_vins_adapter"
+        type="vins_odom_bridge.py"
+        name="vins_odom_bridge"
+        output="screen">
+    <param name="input_odom" type="string" value="$(arg vins_input_odom)"/>
+    <param name="compat_input_odom" type="string" value="$(arg vins_compat_input_odom)"/>
+    <param name="output_odom" type="string" value="$(arg vins_output_odom)"/>
+    <param name="output_path" type="string" value="$(arg vins_output_path)"/>
+    <param name="publish_compat_odom" type="bool" value="$(arg publish_px4ctrl_compat)"/>
+    <param name="compat_odom" type="string" value="$(arg compat_odom)"/>
+    <param name="frame_id" type="string" value="world"/>
+    <param name="child_frame_id" type="string" value="body"/>
+    <param name="max_path_length" type="int" value="3000"/>
+  </node>
+</launch>

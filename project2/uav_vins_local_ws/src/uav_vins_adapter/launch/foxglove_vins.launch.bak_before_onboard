@@ -1,0 +1,31 @@
+<launch>
+  <arg name="port" default="8765"/>
+
+  <node pkg="foxglove_bridge"
+        type="foxglove_bridge"
+        name="foxglove_bridge"
+        output="screen">
+    <param name="port" type="int" value="$(arg port)"/>
+    <rosparam param="topic_whitelist">
+      [
+        "/tf",
+        "/tf_static",
+        "/vins/odom",
+        "/vins/path",
+        "/vins_estimator/odometry",
+        "/vins_estimator/path",
+        "/mavros/imu/data",
+        "/mavros/local_position/odom",
+        "/mavros/local_position/pose",
+        "/mavros/local_position/velocity_local",
+        "/mavros/state",
+        "/camera/infra1/camera_info",
+        "/camera/infra2/camera_info"
+      ]
+    </rosparam>
+    <rosparam param="client_topic_whitelist">[]</rosparam>
+    <rosparam param="service_whitelist">[]</rosparam>
+    <rosparam param="param_whitelist">[]</rosparam>
+  </node>
+</launch>
+

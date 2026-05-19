@@ -1,0 +1,31 @@
+<launch>
+  <!--
+    Replay an existing rosbag through this VINS stack.
+    use_sim_time forced on so bag header stamps are honored.
+    run_realsense/run_mavros stay off; bag is the source of truth.
+    publish_px4ctrl_compat off, otherwise we collide with the /ekf/ekf_odom
+    publisher already in the bag.
+    rosbag play is started in-launch with the clock flag so /clock is published.
+  -->
+  <arg name="bag" doc="Absolute path to the rosbag to replay."/>
+  <arg name="rate" default="1.0"/>
+  <arg name="start" default="0.0"/>
+  <!-- Extra rosbag-play flags get appended, e.g. extra_play_args:="-l -d 2" -->
+  <arg name="extra_play_args" default=""/>
+
+  <param name="/use_sim_time" value="true"/>
+
+  <include file="$(find uav_vins_adapter)/launch/uav_vins_realsense_mavros.launch">
+    <arg name="run_realsense" value="false"/>
+    <arg name="run_mavros" value="false"/>
+    <arg name="run_vins" value="true"/>
+    <arg name="run_bridge" value="true"/>
+    <arg name="publish_px4ctrl_compat" value="false"/>
+  </include>
+
+  <node pkg="rosbag" type="play" name="bag_player" required="true"
+        output="screen"
+        args="--clock --rate=$(arg rate) --start=$(arg start)
+              $(arg extra_play_args)
+              $(arg bag)"/>
+</launch>

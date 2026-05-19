@@ -1,0 +1,39 @@
+<launch>
+  <arg name="port" default="8765"/>
+
+  <node pkg="foxglove_bridge"
+        type="foxglove_bridge"
+        name="foxglove_bridge"
+        output="screen">
+    <param name="port" type="int" value="$(arg port)"/>
+    <!--
+      foxglove_bridge whitelist entries are regexes matched against the full
+      topic / service / param name. Using prefix patterns instead of long
+      literal lists keeps the whitelist robust as VINS/MAVROS add publishers.
+
+      Notable VINS-Fusion publishers under /vins_estimator/ that were previously
+      missing and triggered the "not whitelisted" warnings in foxglove:
+        image_track, point_cloud, margin_cloud,
+        camera_pose_visual, keyframe_pose, keyframe_point.
+    -->
+    <rosparam param="topic_whitelist">
+      [
+        "/ekf/ekf_odom",
+        "/tf",
+        "/rosout",
+        "/rosout_agg",
+        ".*/traj_path",
+        ".*/traj_viz",
+        "/vins_estimator/odometry",
+      ]
+    </rosparam>
+    <!--
+      Default-permissive for non-topic categories. Empty [] would block
+      foxglove clients from calling services (e.g. takeoff/land) or publishing
+      back into ROS, which is rarely what we want.
+    -->
+    <rosparam param="client_topic_whitelist">[".*"]</rosparam>
+    <rosparam param="service_whitelist">[".*"]</rosparam>
+    <rosparam param="param_whitelist">[".*"]</rosparam>
+  </node>
+</launch>
