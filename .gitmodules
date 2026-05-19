@@ -1,3 +1,0 @@
-[submodule "project2/uav_ws_vins/src/VINS-Fusion-ELEC5660"]
-	path = project2/uav_ws_vins/src/VINS-Fusion-ELEC5660
-	url = git@github.com:cyp4x141/VINS-Fusion-noetic-Opencv4.git
