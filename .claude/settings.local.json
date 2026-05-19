@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Usb_jetson_ssh__execute-command"
+    ]
+  }
+}
