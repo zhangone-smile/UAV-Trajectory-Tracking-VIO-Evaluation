@@ -28,40 +28,15 @@ VINS-Fusion is a multi-sensor state estimation framework that fuses visual odome
 | Gravity magnitude | 9.805 m/s² |
 | Time offset estimation | Enabled |
 
-VINS-Fusion configuration (`uav_vins_adapter/config/vins_realsense_stereo_imu.yaml`):
-
-```yaml
-# Feature tracker
-max_cnt: 25
-min_dist: 50
-freq: 15
-
-# Optimization
-max_solver_time: 0.04
-max_num_iterations: 8
-keyframe_parallax: 10.0
-
-# IMU noise
-acc_n: 0.1
-acc_w: 0.0005
-gyr_n: 0.015
-gyr_w: 0.0002
-g_norm: 9.805
-
-# Time offset
-estimate_td: 1
-td: 0.0
-```
-
 The odometry output (`/ekf/ekf_odom`) begins publishing after the trajectory is displayed, with the flight data recorded for analysis.
 
 ### Challenges Encountered with VINS-Fusion
 
-**1. Delayed output at startup**: VINS-Fusion can experience output delays exceeding 1 minute when first initialized. This was significantly improved by reducing the number of feature points tracked (`max_cnt` reduced from default to 25), which decreases processing load and initialization time.
+**1. Height accuracy issues**: We initially attempted to augment the EKF with visual odometry and IMU fusion, but found that height estimation was consistently inaccurate. We tried additionally fusing height readings from the drone's ground distance sensor, but this did not improve the height accuracy — the ground distance sensor measurements were noisy and introduced additional error rather than correction. This issue was further resolved after switching to VINS-Fusion for state estimation.
 
-**2. Height accuracy issues**: We attempted to augment the EKF with visual odometry and IMU fusion, but found that height estimation was consistently inaccurate. We tried additionally fusing height readings from the drone's ground distance sensor, but this did not improve the height accuracy. The ground distance sensor measurements were noisy and introduced additional error rather than correction.
+**2. Delayed output at startup**: Our initial VINS-Fusion implementation experienced output delays exceeding 1 minute after startup. This was significantly improved by reducing the number of feature points tracked (`max_cnt` reduced from default to 25), which decreases processing load and allows VINS-Fusion to produce output much faster.
 
-**3. Divergence during takeoff and landing**: VINS-Fusion sometimes diverges during takeoff and landing phases. This is attributed to two factors: (a) the bouncing motion of the drone during these phases creates rapid camera motion that violates the visual tracking assumptions, and (b) the ground surface offers minimal "good" feature points — the floor is typically textureless, so neither visual odometry nor IMU can maintain accurate state estimation during ground contact.
+**3. Divergence during takeoff and landing**: VINS-Fusion sometimes diverges during takeoff and landing phases. This is attributed to two factors: (a) the bouncing motion of the drone during these phases creates rapid camera motion that violates the visual tracking assumptions, and (b) the ground surface offers minimal "good" feature points — the floor is typically textureless, so neither visual odometry nor IMU can maintain accurate state estimation during ground contact. This was resolved by activating VINS only while the drone is airborne, and by having the drone operator perform smooth takeoffs to avoid abrupt motion.
 
 Future improvements include accepting more feature points with slightly lower quality thresholds so that ground features can be captured, and filtering outlier IMU messages that occur during rapid movements to prevent filter divergence.
 
