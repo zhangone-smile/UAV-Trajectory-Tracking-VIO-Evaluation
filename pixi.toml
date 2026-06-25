@@ -1,12 +1,14 @@
 [workspace]
 channels = ["conda-forge","robostack-noetic"]
-name = "rviz"
+name = "traj-test"
 platforms = ["linux-64","osx-arm64"]
 version = "0.1.0"
 
 [tasks]
 rviz = {cmd = "rviz -d rviz.rviz", description = "Visualise with rviz"}
 topic = {cmd = "rostopic list", description = "List ros1 topics"}
+analyze-p1 = {cmd = "python velocity_tracking_error.py", cwd = "project1", description = "Run project1's trajectory/velocity analysis"}
+analyze-p2 = {cmd = "python analyze_bag.py", cwd = "project2", description = "Run project2's bag analysis"}
 
 [dependencies]
 ros-noetic-rviz = "*"
@@ -15,6 +17,8 @@ rerun-sdk = ">=0.31.3,<0.32"
 
 [pypi-dependencies]
 evo = ">=1.36.3,<2"
+numpy = "*"
+rosbags = "*"
 
 [activation.env]
 ROS_MASTER_URI = "http://192.168.0.54:11311" # Jetson IP

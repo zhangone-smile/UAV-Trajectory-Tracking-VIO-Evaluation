@@ -1,8 +1,10 @@
 
 **.DS_Store
 # pixi environments
-project1/.pixi/*
-!project1/.pixi/config.toml
+.pixi/*
+!.pixi/config.toml
+# Python cache
+**/__pycache__/
 # Build output
 project2/uav_ws_ekf/build/*
 project2/uav_ws_ekf/devel/*

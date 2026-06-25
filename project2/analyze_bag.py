@@ -187,11 +187,11 @@ def compute_tracking_error(bag_path: Path, ref_topic: str, est_topic: str, smoot
 
 def main():
     parser = argparse.ArgumentParser(description="Analyze position and velocity tracking error from bag file")
-    parser.add_argument("--bag", type=Path, default=Path("record.bag"), help="Path to bag file")
+    parser.add_argument("--bag", type=Path, default=Path("bag/record.bag"), help="Path to bag file")
     parser.add_argument("--ref-topic", type=str, default="/eight/traj_viz", help="Reference trajectory topic")
     parser.add_argument("--est-topic", type=str, default="/ekf/ekf_odom", help="Estimate (odometry) topic")
     parser.add_argument("--smooth-window", type=int, default=5, help="Smoothing window size (odd)")
-    parser.add_argument("--out-csv", type=Path, default=None, help="Output CSV file")
+    parser.add_argument("--out-csv", type=Path, default=Path("results/analysis_results.csv"), help="Output CSV file")
     args = parser.parse_args()
 
     print(f"Analyzing: {args.bag}")
