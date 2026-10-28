@@ -47,23 +47,23 @@ Future improvements include accepting more feature points with slightly lower qu
 | Number of odometry poses | 4430 |
 | Flight duration | 32.15 s |
 
-![Figure-eight trajectory flight](figure/demo.gif)
+![Figure-eight trajectory flight](fig/demo.gif)
 
 ### Odometry Trajectory Plots
 
 The following plots show the odometry position over time along each axis and the 3D trajectory comparison:
 
 **X-axis position over time:**
-![X-axis position](figure/x.png)
+![X-axis position](results/x.png)
 
 **Y-axis position over time:**
-![Y-axis position](figure/y.png)
+![Y-axis position](results/y.png)
 
 **Z-axis position over time:**
-![Z-axis position](figure/z.png)
+![Z-axis position](results/z.png)
 
 **3D trajectory: VINS odometry vs reference path:**
-![3D trajectory](figure/traj.png)
+![3D trajectory](results/traj.png)
 
 ## 2. Flight Data and Quantitative Results
 
